@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homework-app
+  namespace: homework
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: homework-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: homework-app
+    spec:
+      nodeSelector:
+        homework: "true"
+      
+      volumes:
+      - name: shared-volume
+        persistentVolumeClaim:
+          claimName: homework-pvc
+      - name: config-volume
+        configMap:
+          name: homework-configmap
+
+      initContainers:
+      - name: init-generator
+        image: alpine
+        command: ["/bin/sh", "-c"]
+        args:
+          - echo "<html><body><h1>HELLO OTUS</h1><p>the content is generated in an init container</p></body></html>" > /init/index.html
+        volumeMounts:
+          - name: shared-volume
+            mountPath: /init
+
+      containers:
+        - name: web-server
+          image: python:3-alpine
+          command: ["/bin/sh", "-c"]
+          args:
+            - python -m http.server 8000 --directory /homework
+          ports:
+            - containerPort: 8000
+          readinessProbe:
+            httpGet:
+              path: /index.html
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          volumeMounts:
+            - name: shared-volume
+              mountPath: /homework
+            - name: config-volume
+              mountPath: /homework/conf
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "rm -f /homework/index.html"]

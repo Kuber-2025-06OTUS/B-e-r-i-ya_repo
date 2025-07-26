@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homework-configmap
+  namespace: homework
+data:
+  APP_NAME: "homework-app"
+  ENVIRONMENT: "develop"
+  LOG_LEVEL: "info"
