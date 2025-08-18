@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cd-token-expiring
+  namespace: homework
+  annotations:
+    kubernetes.io/service-account.name: cd
+    kubernetes.io/created-by: "manual-token-request"
+type: kubernetes.io/service-account-token
